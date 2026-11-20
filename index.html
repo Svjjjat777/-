@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Firefox Remaster — Лёгкий браузер на чистом Python</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            fox: {
+              bg: '#15141A',
+              surface: '#1C1B22',
+              card: '#23222B',
+              bar: '#2B2A33',
+              border: '#3A3946',
+              orange: '#FF7139',
+              amber: '#FF9400',
+              purple: '#9059FF',
+              text: '#F9F9FB',
+              muted: '#A1A1B5',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-fox-bg text-fox-text font-sans antialiased selection:bg-fox-orange selection:text-white overflow-x-hidden">
+
+  <!-- Ambient Background Glows -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+    <div class="absolute -top-40 left-1/4 w-96 h-96 bg-fox-purple/20 rounded-full blur-[128px]"></div>
+    <div class="absolute top-20 right-1/4 w-96 h-96 bg-fox-orange/20 rounded-full blur-[128px]"></div>
+    <div class="absolute bottom-10 left-1/3 w-80 h-80 bg-fox-amber/10 rounded-full blur-[120px]"></div>
+  </div>
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-fox-bg/80 border-b border-fox-border/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <!-- Brand Logo -->
+      <a href="#" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-fox-amber via-fox-orange to-fox-purple p-0.5 shadow-lg shadow-fox-orange/20 group-hover:scale-105 transition-transform">
+          <div class="w-full h-full bg-fox-surface rounded-[10px] flex items-center justify-center">
+            <!-- Custom Vector Fox / Flame Emblem -->
+            <svg class="w-6 h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="foxGrad" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#FF9400"/>
+                  <stop offset="0.5" stop-color="#FF7139"/>
+                  <stop offset="1" stop-color="#9059FF"/>
+                </linearGradient>
+              </defs>
+              <path d="M16 3C11.5 6.2 8 10.5 8 16.2C8 21.8 11.8 26.5 16.8 27.8C13.8 25.5 12.6 22.3 13.4 19.2C14.1 16.4 16.5 14.5 19.2 14.5C21.8 14.5 23.8 16.4 24 18.8C25.2 15.8 24.7 11.4 22.2 8.2C21.5 9.8 20.1 10.6 18.7 10.5C19.6 8.2 18.8 5.1 16 3Z" fill="url(#foxGrad)"/>
+              <circle cx="19.5" cy="18.5" r="2.2" fill="#F9F9FB"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-fox-text to-fox-muted bg-clip-text text-transparent">Firefox Remaster</span>
+          <span class="hidden sm:inline-block ml-2 text-[11px] font-mono px-2 py-0.5 rounded-full bg-fox-card border border-fox-border text-fox-amber">v1.0</span>
+        </div>
+      </a>
+
+      <!-- Nav Links -->
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-fox-muted">
+        <a href="#features" class="hover:text-white transition-colors">Возможности</a>
+        <a href="#demo" class="hover:text-white transition-colors">Интерактивное демо</a>
+        <a href="#quickstart" class="hover:text-white transition-colors">Системные требования</a>
+      </nav>
+
+      <!-- Compact CTA -->
+      <div class="flex items-center gap-3">
+        <button type="button" onclick="downloadFirefoxRemaster()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-fox-orange to-fox-amber hover:from-fox-amber hover:to-fox-orange text-fox-bg font-bold text-sm shadow-lg shadow-fox-orange/25 transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"/>
+          </svg>
+          <span>Скачать</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="relative pt-14 pb-20 lg:pt-20 lg:pb-28">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-4xl mx-auto">
+        <!-- Pill Badge -->
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-fox-card/90 border border-fox-border text-xs sm:text-sm font-medium text-fox-muted mb-6 shadow-inner">
+          <span class="w-2 h-2 rounded-full bg-fox-orange animate-pulse"></span>
+          <span>Версия 1.0 • Pure Python • 0 сторонних библиотек</span>
+        </div>
+
+        <!-- Headline -->
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-6">
+          Firefox Remaster —
+          <span class="bg-gradient-to-r from-fox-amber via-fox-orange to-fox-purple bg-clip-text text-transparent">
+            лёгкий браузер нового поколения
+          </span>
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="text-base sm:text-lg text-fox-muted max-w-2xl mx-auto leading-relaxed mb-10">
+          Полностью написан на стандартной библиотеке Python (<code class="text-fox-amber font-mono text-sm">tkinter</code>, <code class="text-fox-amber font-mono text-sm">urllib</code>, <code class="text-fox-amber font-mono text-sm">threading</code>, <code class="text-fox-amber font-mono text-sm">json</code>). Мгновенный запуск, собственный HTML-рендерер, вкладки, закладки и ноль зависимостей из <code class="font-mono text-sm text-white">pip</code>.
+        </p>
+
+        <!-- Platform Selector & Download Controls -->
+        <div id="download-box" class="max-w-xl mx-auto bg-fox-surface/90 backdrop-blur-md border border-fox-border rounded-2xl p-5 shadow-2xl mb-14">
+          <!-- Platform Tabs -->
+          <div class="flex items-center justify-center gap-2 p-1 bg-fox-bg rounded-xl border border-fox-border/70 mb-5">
+            <button type="button" onclick="selectPlatform('win')" id="plat-win" class="plat-tab flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-fox-card text-white shadow cursor-pointer">
+              Windows
+            </button>
+            <button type="button" onclick="selectPlatform('linux')" id="plat-linux" class="plat-tab flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all text-fox-muted hover:text-white cursor-pointer">
+              Linux
+            </button>
+            <button type="button" onclick="selectPlatform('mac')" id="plat-mac" class="plat-tab flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all text-fox-muted hover:text-white cursor-pointer">
+              macOS
+            </button>
+          </div>
+
+          <!-- Primary & Secondary Action Buttons -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <button type="button" onclick="downloadFirefoxRemaster()" class="flex-1 py-3.5 px-6 rounded-xl bg-gradient-to-r from-fox-orange via-fox-amber to-fox-orange bg-[length:200%_auto] hover:bg-right text-fox-bg font-extrabold text-sm sm:text-base shadow-xl shadow-fox-orange/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2.5 cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"/>
+              </svg>
+              <span>Скачать Firefox Remasted setup.exe</span>
+            </button>
+
+            <a href="#demo" class="py-3.5 px-5 rounded-xl bg-fox-card hover:bg-fox-bar border border-fox-border text-white font-semibold text-sm transition-all flex items-center justify-center gap-2">
+              <span>Посмотреть демо</span>
+            </a>
+          </div>
+
+          <!-- Platform Meta & Extra Launcher -->
+          <div class="mt-4 pt-3.5 border-t border-fox-border/60 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-fox-muted">
+            <span id="plat-meta">Windows 10/11 • Установщик Firefox Remasted setup.exe</span>
+            <button type="button" id="extra-launcher-btn" onclick="downloadLauncher()" class="text-fox-amber hover:underline font-medium cursor-pointer">
+              + Скачать лаунчер (.bat)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Live Browser Preview Mockup -->
+      <div id="demo" class="scroll-mt-24 max-w-5xl mx-auto">
+        <div class="flex items-center justify-between mb-3 px-1">
+          <div class="flex items-center gap-2 text-xs font-mono text-fox-muted">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>ИНТЕРАКТИВНЫЙ ПРЕДПРОСМОТР ИНТЕРФЕЙСА (КЛИКАБЕЛЬНО)</span>
+          </div>
+          <span class="text-xs text-fox-muted hidden sm:inline">Попробуйте переключить вкладки, ввести запрос или скрыть боковую панель</span>
+        </div>
+
+        <!-- Window Frame -->
+        <div class="rounded-2xl overflow-hidden border border-fox-border bg-fox-surface shadow-[0_25px_80px_-15px_rgba(0,0,0,0.85)]">
+          <!-- Window Title & Tab Bar -->
+          <div class="bg-fox-bg px-3 pt-2.5 flex items-center justify-between border-b border-fox-border/60 select-none">
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar" id="demo-tabs">
+              <!-- Tabs rendered by JS -->
+            </div>
+            <div class="flex items-center gap-2 pl-3 pb-1.5">
+              <button type="button" onclick="demoNewTab()" title="Новая вкладка" class="w-7 h-7 rounded-lg bg-fox-card hover:bg-fox-bar text-white font-bold text-sm flex items-center justify-center transition-colors cursor-pointer">+</button>
+              <div class="hidden sm:flex items-center gap-1.5 ml-2">
+                <span class="w-3 h-3 rounded-full bg-fox-border"></span>
+                <span class="w-3 h-3 rounded-full bg-fox-border"></span>
+                <span class="w-3 h-3 rounded-full bg-fox-orange/80"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navigation Toolbar -->
+          <div class="bg-fox-bar px-3 py-2 flex items-center gap-2 border-b border-fox-border">
+            <button type="button" onclick="demoNavigate('about:home')" title="Домой" class="p-2 rounded-lg hover:bg-fox-card text-fox-text text-sm transition-colors cursor-pointer">⌂</button>
+            <button type="button" onclick="demoReload()" title="Обновить" class="p-2 rounded-lg hover:bg-fox-card text-fox-text text-sm transition-colors cursor-pointer">↻</button>
+
+            <!-- Address Bar -->
+            <form onsubmit="event.preventDefault(); demoNavigate(document.getElementById('demo-url-input').value)" class="flex-1 flex items-center bg-fox-bg border border-fox-border focus-within:border-fox-orange rounded-xl px-3 py-1.5 transition-colors">
+              <span class="mr-2 text-sm">🦊</span>
+              <input id="demo-url-input" type="text" value="about:home" class="w-full bg-transparent text-xs sm:text-sm font-mono text-fox-text focus:outline-none" placeholder="Введите адрес или поисковый запрос..." />
+              <button type="button" onclick="demoToggleBookmark()" id="demo-star-btn" title="Добавить в закладки" class="ml-2 text-fox-amber text-base hover:scale-110 transition-transform cursor-pointer">☆</button>
+            </form>
+
+            <button type="button" onclick="demoNavigate(document.getElementById('demo-url-input').value)" class="hidden sm:inline-flex px-3.5 py-1.5 rounded-xl bg-fox-orange hover:bg-fox-amber text-fox-bg font-bold text-xs transition-colors cursor-pointer">
+              Перейти
+            </button>
+            <button type="button" onclick="demoToggleSidebar()" title="Боковая панель" class="p-2 rounded-lg hover:bg-fox-card text-fox-text text-sm transition-colors cursor-pointer">☰</button>
+          </div>
+
+          <!-- Simulated Progress Line -->
+          <div class="h-0.5 w-full bg-fox-bg overflow-hidden">
+            <div id="demo-progress" class="h-full w-0 bg-gradient-to-r from-fox-orange to-fox-amber transition-all duration-300"></div>
+          </div>
+
+          <!-- Browser Body -->
+          <div class="flex min-h-[380px] sm:min-h-[420px] bg-fox-surface">
+            <!-- Sidebar -->
+            <aside id="demo-sidebar" class="w-52 sm:w-60 bg-fox-card/80 border-r border-fox-border p-3.5 flex flex-col justify-between shrink-0">
+              <div>
+                <div class="text-[11px] font-bold tracking-wider text-fox-orange uppercase mb-2.5">Закладки</div>
+                <ul id="demo-bookmarks-list" class="space-y-1 text-xs">
+                  <!-- Populated by JS -->
+                </ul>
+
+                <div class="my-3.5 border-t border-fox-border/70"></div>
+
+                <div class="text-[11px] font-bold tracking-wider text-fox-muted uppercase mb-2">Недавняя история</div>
+                <ul id="demo-history-list" class="space-y-1 text-xs text-fox-muted">
+                  <!-- Populated by JS -->
+                </ul>
+              </div>
+
+              <div class="pt-3 border-t border-fox-border/60 text-[11px] text-fox-muted font-mono">
+                RAM: ~18 МБ • 0 deps
+              </div>
+            </aside>
+
+            <!-- Viewport Content -->
+            <main id="demo-viewport" class="flex-1 p-5 sm:p-8 overflow-y-auto">
+              <!-- Dynamic view rendered by JS -->
+            </main>
+          </div>
+
+          <!-- Status Bar -->
+          <div class="bg-fox-bg px-4 py-1.5 border-t border-fox-border/60 flex items-center justify-between text-[11px] text-fox-muted font-mono">
+            <span id="demo-status">Готово • Firefox Remaster (Zero External Dependencies)</span>
+            <span class="text-fox-orange font-semibold">DuckDuckGo Search</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature Grid Section -->
+  <section id="features" class="py-20 border-t border-fox-border/50 bg-fox-surface/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto mb-14">
+        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">Почему Firefox Remaster</h2>
+        <p class="text-fox-muted text-sm sm:text-base">
+          Минималистичная архитектура без тяжелых движков и сотен мегабайт зависимостей. Всё работает из коробки на любом компьютере с Python.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Feature 1 -->
+        <div class="p-6 rounded-2xl bg-fox-card/70 border border-fox-border hover:border-fox-orange/60 transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-fox-orange/15 border border-fox-orange/30 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            📦
+          </div>
+          <h3 class="text-lg font-bold mb-2">0 внешних библиотек</h3>
+          <p class="text-sm text-fox-muted leading-relaxed">
+            Никаких <code class="text-fox-amber font-mono">pip install</code>, PyQt или Electron. Используются исключительно встроенные модули <code class="font-mono text-white">tkinter</code>, <code class="font-mono text-white">urllib</code>, <code class="font-mono text-white">json</code> и <code class="font-mono text-white">threading</code>.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="p-6 rounded-2xl bg-fox-card/70 border border-fox-border hover:border-fox-orange/60 transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-fox-amber/15 border border-fox-amber/30 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            🗂️
+          </div>
+          <h3 class="text-lg font-bold mb-2">Вкладки и горячие клавиши</h3>
+          <p class="text-sm text-fox-muted leading-relaxed">
+            Полноценная панель вкладок с индивидуальной историей переходов. Поддержка привычных сочетаний <code class="font-mono text-white">Ctrl+T</code>, <code class="font-mono text-white">Ctrl+W</code>, <code class="font-mono text-white">Ctrl+L</code> и <code class="font-mono text-white">F5</code>.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="p-6 rounded-2xl bg-fox-card/70 border border-fox-border hover:border-fox-orange/60 transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-fox-purple/15 border border-fox-purple/30 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            📄
+          </div>
+          <h3 class="text-lg font-bold mb-2">Встроенный HTML-рендерер</h3>
+          <p class="text-sm text-fox-muted leading-relaxed">
+            Собственный парсер очищает страницы от лишних скриптов и аккуратно отображает заголовки, абзацы, списки, цитаты, блоки кода и кликабельные ссылки.
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="p-6 rounded-2xl bg-fox-card/70 border border-fox-border hover:border-fox-orange/60 transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-fox-orange/15 border border-fox-orange/30 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            ★
+          </div>
+          <h3 class="text-lg font-bold mb-2">Закладки и история в JSON</h3>
+          <p class="text-sm text-fox-muted leading-relaxed">
+            Удобная боковая панель быстрого доступа и автоматическое сохранение закладок и посещённых страниц в компактный локальный файл <code class="font-mono text-white">firefox_remaster_data.json</code>.
+          </p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="p-6 rounded-2xl bg-fox-card/70 border border-fox-border hover:border-fox-orange/60 transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-fox-amber/15 border border-fox-amber/30 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            ⚡
+          </div>
+          <h3 class="text-lg font-bold mb-2">Асинхронная загрузка</h3>
+          <p class="text-sm text-fox-muted leading-relaxed">
+            Все сетевые запросы выполняются в фоновых потоках (<code class="font-mono text-white">threading</code>) с плавным индикатором прогресса — интерфейс никогда не зависает при загрузке.
+          </p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="p-6 rounded-2xl bg-fox-card/70 border border-fox-border hover:border-fox-orange/60 transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-fox-purple/15 border border-fox-purple/30 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            🧭
+          </div>
+          <h3 class="text-lg font-bold mb-2">Служебные страницы about:*</h3>
+          <p class="text-sm text-fox-muted leading-relaxed">
+            Встроенные страницы <code class="text-fox-amber font-mono">about:home</code>, <code class="text-fox-amber font-mono">about:history</code>, <code class="text-fox-amber font-mono">about:bookmarks</code> и <code class="text-fox-amber font-mono">about:help</code>, а также кнопка открытия во внешнем браузере.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- System Requirements & Quick Start Section -->
+  <section id="quickstart" class="py-20">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <!-- Requirements List -->
+        <div class="lg:col-span-5 space-y-5">
+          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Системные требования</h2>
+          <p class="text-sm text-fox-muted leading-relaxed">
+            Firefox Remaster работает везде, где установлен стандартный интерпретатор Python с графическим модулем Tk.
+          </p>
+
+          <ul class="space-y-3 text-sm">
+            <li class="flex items-start gap-3">
+              <span class="w-5 h-5 rounded-full bg-fox-orange/20 text-fox-orange flex items-center justify-center text-xs font-bold mt-0.5">✓</span>
+              <div>
+                <strong class="text-white">ОС:</strong>
+                <span class="text-fox-muted"> Windows 10/11, Ubuntu/Debian/Arch, macOS 12+</span>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="w-5 h-5 rounded-full bg-fox-orange/20 text-fox-orange flex items-center justify-center text-xs font-bold mt-0.5">✓</span>
+              <div>
+                <strong class="text-white">Python:</strong>
+                <span class="text-fox-muted"> версия 3.10 или новее (со встроенным <code class="font-mono text-white">tkinter</code>)</span>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="w-5 h-5 rounded-full bg-fox-orange/20 text-fox-orange flex items-center justify-center text-xs font-bold mt-0.5">✓</span>
+              <div>
+                <strong class="text-white">Память и диск:</strong>
+                <span class="text-fox-muted"> &lt; 25 МБ ОЗУ и 25 КБ на диске</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Terminal Quick Start Block -->
+        <div class="lg:col-span-7">
+          <div class="rounded-2xl bg-fox-surface border border-fox-border overflow-hidden shadow-2xl">
+            <div class="bg-fox-bar px-4 py-2.5 flex items-center justify-between border-b border-fox-border">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+                <span class="w-3 h-3 rounded-full bg-amber-400/80"></span>
+                <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+                <span class="ml-2 text-xs font-mono text-fox-muted">terminal — запуск за 5 секунд</span>
+              </div>
+              <button type="button" onclick="copyTerminalCmd()" id="copy-cmd-btn" class="px-3 py-1 rounded-lg bg-fox-card hover:bg-fox-bg border border-fox-border text-xs font-medium text-white transition-colors cursor-pointer">
+                Копировать команду
+              </button>
+            </div>
+            <div class="p-5 font-mono text-xs sm:text-sm space-y-2.5 overflow-x-auto">
+              <div class="text-fox-muted"># 1. Скачайте файл Firefox Remasted setup.exe кнопкой выше</div>
+              <div class="flex items-center gap-2">
+                <span class="text-fox-orange select-none">$</span>
+                <span id="terminal-cmd" class="text-emerald-300">.\Firefox Remasted setup.exe</span>
+              </div>
+              <div class="text-fox-muted pt-2"># Или запустите двойным кликом после загрузки:</div>
+              <div class="flex items-center gap-2">
+                <span class="text-fox-purple select-none">$</span>
+                <span class="text-fox-text">start "" "Firefox Remasted setup.exe"</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-fox-border/60 bg-fox-surface/60 py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-xl">🦊</span>
+        <div>
+          <div class="font-bold text-sm">Firefox Remaster v1.0</div>
+          <div class="text-xs text-fox-muted">Создано на чистом Python без сторонних библиотек</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button type="button" onclick="downloadFirefoxRemaster()" class="px-4 py-2 rounded-xl bg-fox-card hover:bg-fox-bar border border-fox-border text-xs font-semibold text-white transition-colors cursor-pointer">
+          Скачать Firefox Remasted setup.exe
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Download Confirmation Modal / Toast -->
+  <div id="download-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="max-w-md w-full rounded-2xl bg-fox-surface border border-fox-border p-6 shadow-2xl relative">
+      <button type="button" onclick="closeDownloadModal()" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-fox-card hover:bg-fox-bar text-fox-muted hover:text-white flex items-center justify-center cursor-pointer">✕</button>
+
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-fox-orange to-fox-purple flex items-center justify-center text-2xl mb-4 shadow-lg">
+        🦊
+      </div>
+
+      <h3 class="text-xl font-extrabold mb-1" id="modal-title">Загрузка началась!</h3>
+      <p class="text-sm text-fox-muted mb-4" id="modal-desc">
+        Файл <code class="text-fox-amber font-mono">Firefox Remasted setup.exe</code> сохранён на ваше устройство.
+      </p>
+
+      <div class="p-3.5 rounded-xl bg-fox-bg border border-fox-border font-mono text-xs text-emerald-300 mb-5 flex items-center justify-between">
+        <span id="modal-cmd">.\Firefox Remasted setup.exe</span>
+        <button type="button" onclick="copyModalCmd()" class="text-fox-muted hover:text-white underline ml-2 cursor-pointer">Копировать</button>
+      </div>
+
+      <div class="flex items-center justify-end gap-3">
+        <button type="button" onclick="closeDownloadModal()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-fox-orange to-fox-amber text-fox-bg font-bold text-sm cursor-pointer">
+          Отлично
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const INSTALLER_FILENAME = 'Firefox Remasted setup.exe';
+    const INSTALLER_URL = './Firefox%20Remasted%20setup.exe';
+
+    // Platform selector state
+    let selectedPlatform = 'win';
+
+    const platformInfo = {
+      win: {
+        meta: 'Windows 10/11 • Установщик Firefox Remasted setup.exe',
+        launcherLabel: '+ Скачать лаунчер (.bat)',
+        cmd: '.\\Firefox Remasted setup.exe'
+      },
+      linux: {
+        meta: 'Linux • Установщик Firefox Remasted setup.exe (через Wine / совместимость)',
+        launcherLabel: '+ Скачать скрипт запуска (.sh)',
+        cmd: 'wine "Firefox Remasted setup.exe"'
+      },
+      mac: {
+        meta: 'macOS • Установщик Firefox Remasted setup.exe',
+        launcherLabel: '+ Скачать команду запуска (.command)',
+        cmd: './"Firefox Remasted setup.exe"'
+      }
+    };
+
+    function selectPlatform(plat) {
+      selectedPlatform = plat;
+      document.querySelectorAll('.plat-tab').forEach(btn => {
+        btn.classList.remove('bg-fox-card', 'text-white', 'shadow');
+        btn.classList.add('text-fox-muted');
+      });
+      const active = document.getElementById('plat-' + plat);
+      active.classList.add('bg-fox-card', 'text-white', 'shadow');
+      active.classList.remove('text-fox-muted');
+
+      document.getElementById('plat-meta').textContent = platformInfo[plat].meta;
+      document.getElementById('extra-launcher-btn').textContent = platformInfo[plat].launcherLabel;
+    }
+
+    function triggerFileDownload(href, filename) {
+      const a = document.createElement('a');
+      a.href = href;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function triggerBlobDownload(filename, content, mimeType = 'text/plain;charset=utf-8') {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      triggerFileDownload(url, filename);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function downloadFirefoxRemaster() {
+      triggerFileDownload(INSTALLER_URL, INSTALLER_FILENAME);
+      openDownloadModal(
+        INSTALLER_FILENAME,
+        platformInfo[selectedPlatform].cmd
+      );
+    }
+
+    function downloadLauncher() {
+      if (selectedPlatform === 'win') {
+        const bat = '@echo off\r\ntitle Firefox Remaster Setup\r\nstart "" "%~dp0Firefox Remasted setup.exe"\r\n';
+        triggerBlobDownload('Start_Firefox_Remaster_Setup.bat', bat);
+        openDownloadModal('Start_Firefox_Remaster_Setup.bat', 'Поместите рядом с Firefox Remasted setup.exe и запустите двойным кликом');
+      } else if (selectedPlatform === 'linux') {
+        const sh = '#!/usr/bin/env bash\ncd "$(dirname "$0")"\nwine "Firefox Remasted setup.exe"\n';
+        triggerBlobDownload('start_firefox_remaster_setup.sh', sh);
+        openDownloadModal('start_firefox_remaster_setup.sh', 'chmod +x start_firefox_remaster_setup.sh && ./start_firefox_remaster_setup.sh');
+      } else {
+        const cmdFile = '#!/usr/bin/env bash\ncd "$(dirname "$0")"\nopen "Firefox Remasted setup.exe"\n';
+        triggerBlobDownload('Start_Firefox_Remaster_Setup.command', cmdFile);
+        openDownloadModal('Start_Firefox_Remaster_Setup.command', 'chmod +x Start_Firefox_Remaster_Setup.command');
+      }
+    }
+
+    function openDownloadModal(filename, cmd) {
+      document.getElementById('modal-title').textContent = 'Загрузка началась!';
+      document.getElementById('modal-desc').innerHTML =
+        `Запрошено скачивание файла <code class="text-fox-amber font-mono">${filename}</code> из папки с <code class="text-white font-mono">index.html</code>.`;
+      document.getElementById('modal-cmd').textContent = cmd;
+      const modal = document.getElementById('download-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeDownloadModal() {
+      const modal = document.getElementById('download-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function copyTextFallback(text, btnEl, defaultLabel) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (btnEl) {
+        btnEl.textContent = 'Скопировано!';
+        setTimeout(() => { btnEl.textContent = defaultLabel; }, 1800);
+      }
+    }
+
+    function copyTerminalCmd() {
+      const cmd = document.getElementById('terminal-cmd').textContent;
+      const btn = document.getElementById('copy-cmd-btn');
+      copyTextFallback(cmd, btn, 'Копировать команду');
+    }
+
+    function copyModalCmd() {
+      const cmd = document.getElementById('modal-cmd').textContent;
+      copyTextFallback(cmd, null, '');
+    }
+
+    // --- Interactive Browser Demo Simulation ---
+    const demoState = {
+      tabs: [
+        { id: 1, title: 'Новая вкладка', url: 'about:home' },
+        { id: 2, title: 'Python 3 Docs', url: 'https://docs.python.org/3/' }
+      ],
+      activeId: 1,
+      sidebarOpen: true,
+      bookmarks: [
+        { title: 'Python Docs', url: 'https://docs.python.org/3/' },
+        { title: 'Example Domain', url: 'https://example.com' },
+        { title: 'Справка браузера', url: 'about:help' },
+        { title: 'История', url: 'about:history' }
+      ],
+      history: [
+        { title: 'Python 3 Docs', url: 'https://docs.python.org/3/' },
+        { title: 'Example Domain', url: 'https://example.com' }
+      ]
+    };
+
+    const demoPages = {
+      'about:home': () => `
+        <div class="max-w-xl mx-auto text-center py-4">
+          <div class="text-3xl sm:text-4xl font-extrabold mb-2">🦊 Firefox Remaster</div>
+          <p class="text-xs sm:text-sm text-fox-muted mb-6">Быстрый и лёгкий браузер на чистом Python</p>
+          <form onsubmit="event.preventDefault(); demoNavigate(this.querySelector('input').value)" class="flex gap-2 mb-8">
+            <input type="text" placeholder="Поиск в DuckDuckGo или ввод адреса..." class="flex-1 px-4 py-2.5 rounded-xl bg-fox-bg border border-fox-border text-sm focus:outline-none focus:border-fox-orange" />
+            <button type="submit" class="px-5 py-2.5 rounded-xl bg-fox-orange hover:bg-fox-amber text-fox-bg font-bold text-sm cursor-pointer">Найти</button>
+          </form>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-left">
+            <button type="button" onclick="demoNavigate('https://docs.python.org/3/')" class="p-3.5 rounded-xl bg-fox-card hover:bg-fox-bar border border-fox-border flex items-center gap-2.5 transition-colors cursor-pointer">
+              <span class="text-lg">🐍</span>
+              <span class="text-xs font-bold">Python Docs</span>
+            </button>
+            <button type="button" onclick="demoNavigate('https://example.com')" class="p-3.5 rounded-xl bg-fox-card hover:bg-fox-bar border border-fox-border flex items-center gap-2.5 transition-colors cursor-pointer">
+              <span class="text-lg">🌐</span>
+              <span class="text-xs font-bold">Example.com</span>
+            </button>
+            <button type="button" onclick="demoNavigate('about:bookmarks')" class="p-3.5 rounded-xl bg-fox-card hover:bg-fox-bar border border-fox-border flex items-center gap-2.5 transition-colors cursor-pointer">
+              <span class="text-lg text-fox-amber">★</span>
+              <span class="text-xs font-bold">Закладки</span>
+            </button>
+            <button type="button" onclick="demoNavigate('about:history')" class="p-3.5 rounded-xl bg-fox-card hover:bg-fox-bar border border-fox-border flex items-center gap-2.5 transition-colors cursor-pointer">
+              <span class="text-lg">🕒</span>
+              <span class="text-xs font-bold">История</span>
+            </button>
+            <button type="button" onclick="demoNavigate('about:help')" class="p-3.5 rounded-xl bg-fox-card hover:bg-fox-bar border border-fox-border flex items-center gap-2.5 transition-colors cursor-pointer">
+              <span class="text-lg">❓</span>
+              <span class="text-xs font-bold">Справка</span>
+            </button>
+            <button type="button" onclick="downloadFirefoxRemaster()" class="p-3.5 rounded-xl bg-fox-orange/15 hover:bg-fox-orange/25 border border-fox-orange/40 flex items-center gap-2.5 transition-colors cursor-pointer">
+              <span class="text-lg">⬇</span>
+              <span class="text-xs font-bold text-fox-amber">Скачать .exe</span>
+            </button>
+          </div>
+        </div>
+      `,
+      'https://docs.python.org/3/': () => `
+        <div class="space-y-4">
+          <div class="text-xs font-mono text-fox-muted pb-2 border-b border-fox-border">Источник: https://docs.python.org/3/</div>
+          <h1 class="text-2xl font-extrabold">Python 3.13 Documentation</h1>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Добро пожаловать в официальную документацию Python! В <strong class="text-white">Firefox Remaster</strong> эта страница отрисована встроенным парсером <code class="px-1.5 py-0.5 rounded bg-slate-800 text-sky-300 font-mono text-xs">SimpleHTMLRenderer</code>.
+          </p>
+          <h3 class="text-base font-bold text-fox-amber">Популярные разделы стандартной библиотеки:</h3>
+          <ul class="space-y-2 text-sm text-slate-200 pl-2">
+            <li><span class="text-fox-orange font-bold mr-2">•</span><button type="button" onclick="demoNavigate('https://example.com')" class="text-blue-400 underline hover:text-blue-300 cursor-pointer">tkinter — Графический интерфейс пользователя на базе Tk</button></li>
+            <li><span class="text-fox-orange font-bold mr-2">•</span><button type="button" onclick="demoNavigate('about:help')" class="text-blue-400 underline hover:text-blue-300 cursor-pointer">urllib.request — Высокоуровневый клиент HTTP/HTTPS</button></li>
+            <li><span class="text-fox-orange font-bold mr-2">•</span><span class="text-slate-300">threading — Многопоточное выполнение без блокировки UI</span></li>
+          </ul>
+        </div>
+      `,
+      'https://example.com': () => `
+        <div class="space-y-4">
+          <div class="text-xs font-mono text-fox-muted pb-2 border-b border-fox-border">Источник: https://example.com</div>
+          <h1 class="text-2xl font-extrabold">Example Domain</h1>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Этот домен предназначен для использования в иллюстративных примерах в документах. Вы можете использовать его в литературе без предварительного согласования.
+          </p>
+          <p class="text-sm">
+            <button type="button" onclick="demoNavigate('about:home')" class="text-blue-400 underline hover:text-blue-300 cursor-pointer">← Вернуться на стартовую страницу about:home</button>
+          </p>
+        </div>
+      `,
+      'about:help': () => `
+        <div class="space-y-4">
+          <h1 class="text-2xl font-extrabold">Firefox Remaster — Справка</h1>
+          <p class="text-sm text-slate-300">Браузер написан полностью на стандартной библиотеке Python без сторонних пакетов.</p>
+          <h3 class="text-base font-bold text-fox-amber">Горячие клавиши</h3>
+          <ul class="space-y-1.5 text-sm text-slate-200">
+            <li><span class="text-fox-orange font-bold mr-2">•</span><strong>Ctrl + T</strong> — открыть новую вкладку</li>
+            <li><span class="text-fox-orange font-bold mr-2">•</span><strong>Ctrl + W</strong> — закрыть текущую вкладку</li>
+            <li><span class="text-fox-orange font-bold mr-2">•</span><strong>Ctrl + L</strong> — выделить адресную строку</li>
+            <li><span class="text-fox-orange font-bold mr-2">•</span><strong>F5</strong> — обновить страницу</li>
+          </ul>
+        </div>
+      `,
+      'about:history': () => `
+        <div class="space-y-4">
+          <h1 class="text-2xl font-extrabold">История посещений</h1>
+          <ul class="space-y-2 text-sm">
+            ${demoState.history.map(h => `
+              <li>
+                <span class="text-fox-orange font-bold mr-2">•</span>
+                <button type="button" onclick="demoNavigate('${h.url}')" class="text-blue-400 underline hover:text-blue-300 cursor-pointer">${h.title}</button>
+                <span class="text-xs font-mono text-fox-muted ml-2">${h.url}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      `,
+      'about:bookmarks': () => `
+        <div class="space-y-4">
+          <h1 class="text-2xl font-extrabold">Закладки</h1>
+          <ul class="space-y-2 text-sm">
+            ${demoState.bookmarks.map(b => `
+              <li>
+                <span class="text-fox-amber font-bold mr-2">★</span>
+                <button type="button" onclick="demoNavigate('${b.url}')" class="text-blue-400 underline hover:text-blue-300 cursor-pointer">${b.title}</button>
+                <span class="text-xs font-mono text-fox-muted ml-2">${b.url}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      `
+    };
+
+    function renderDemo() {
+      const tabsContainer = document.getElementById('demo-tabs');
+      tabsContainer.innerHTML = demoState.tabs.map(t => {
+        const active = t.id === demoState.activeId;
+        return `
+          <div onclick="demoSwitchTab(${t.id})" class="flex items-center gap-2 px-3 py-1.5 rounded-t-xl text-xs cursor-pointer transition-colors ${active ? 'bg-fox-bar text-white font-semibold border-t border-x border-fox-orange/70' : 'text-fox-muted hover:text-white hover:bg-fox-card/50'}">
+            <span>🦊</span>
+            <span class="max-w-[120px] truncate">${t.title}</span>
+            <button type="button" onclick="event.stopPropagation(); demoCloseTab(${t.id})" class="ml-1 hover:text-red-400 font-bold cursor-pointer">×</button>
+          </div>
+        `;
+      }).join('');
+
+      const sidebar = document.getElementById('demo-sidebar');
+      sidebar.style.display = demoState.sidebarOpen ? 'flex' : 'none';
+
+      document.getElementById('demo-bookmarks-list').innerHTML = demoState.bookmarks.map(b => `
+        <li>
+          <button type="button" onclick="demoNavigate('${b.url}')" class="w-full text-left px-2 py-1.5 rounded-lg hover:bg-fox-bar text-fox-text truncate transition-colors cursor-pointer">
+            <span class="text-fox-amber mr-1.5">★</span>${b.title}
+          </button>
+        </li>
+      `).join('');
+
+      document.getElementById('demo-history-list').innerHTML = demoState.history.slice(0, 5).map(h => `
+        <li>
+          <button type="button" onclick="demoNavigate('${h.url}')" class="w-full text-left px-2 py-1 rounded-lg hover:bg-fox-bar truncate transition-colors cursor-pointer">
+            🕒 ${h.title}
+          </button>
+        </li>
+      `).join('');
+
+      const current = demoState.tabs.find(t => t.id === demoState.activeId) || demoState.tabs[0];
+      document.getElementById('demo-url-input').value = current.url;
+      const isBookmarked = demoState.bookmarks.some(b => b.url === current.url);
+      document.getElementById('demo-star-btn').textContent = isBookmarked ? '★' : '☆';
+
+      const viewport = document.getElementById('demo-viewport');
+      if (demoPages[current.url]) {
+        viewport.innerHTML = demoPages[current.url]();
+      } else {
+        viewport.innerHTML = `
+          <div class="space-y-4">
+            <div class="text-xs font-mono text-fox-muted pb-2 border-b border-fox-border">Результат поиска / страница: ${current.url}</div>
+            <h1 class="text-2xl font-extrabold">Результаты для «${current.title}»</h1>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              В реальном приложении <code class="text-fox-amber font-mono">Firefox Remaster</code> этот запрос отправляется через <code class="font-mono text-white">urllib.request</code> в фоновом потоке и рендерится в окне браузера.
+            </p>
+            <div class="p-4 rounded-xl bg-fox-card border border-fox-border flex items-center justify-between gap-4">
+              <span class="text-xs text-fox-muted">Хотите опробовать загрузку реальных сайтов на своём ПК?</span>
+              <button type="button" onclick="downloadFirefoxRemaster()" class="px-4 py-2 rounded-lg bg-fox-orange text-fox-bg font-bold text-xs shrink-0 cursor-pointer">Скачать .exe</button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function demoAnimateProgress() {
+      const bar = document.getElementById('demo-progress');
+      bar.style.width = '75%';
+      setTimeout(() => { bar.style.width = '100%'; }, 150);
+      setTimeout(() => { bar.style.width = '0%'; }, 420);
+    }
+
+    function demoSwitchTab(id) {
+      demoState.activeId = id;
+      renderDemo();
+    }
+
+    function demoNewTab() {
+      const newId = Date.now();
+      demoState.tabs.push({ id: newId, title: 'Новая вкладка', url: 'about:home' });
+      demoState.activeId = newId;
+      renderDemo();
+    }
+
+    function demoCloseTab(id) {
+      if (demoState.tabs.length <= 1) {
+        demoNavigate('about:home');
+        return;
+      }
+      demoState.tabs = demoState.tabs.filter(t => t.id !== id);
+      if (demoState.activeId === id) {
+        demoState.activeId = demoState.tabs[demoState.tabs.length - 1].id;
+      }
+      renderDemo();
+    }
+
+    function demoNavigate(raw) {
+      const input = (raw || '').trim() || 'about:home';
+      const current = demoState.tabs.find(t => t.id === demoState.activeId);
+      if (!current) return;
+
+      let target = input;
+      let title = input;
+
+      if (input === 'about:home') {
+        title = 'Новая вкладка';
+      } else if (input === 'about:help') {
+        title = 'Справка';
+      } else if (input === 'about:history') {
+        title = 'История';
+      } else if (input === 'about:bookmarks') {
+        title = 'Закладки';
+      } else if (input.includes('python.org')) {
+        target = 'https://docs.python.org/3/';
+        title = 'Python 3 Docs';
+      } else if (input.includes('example.com')) {
+        target = 'https://example.com';
+        title = 'Example Domain';
+      } else if (!input.startsWith('http') && !input.startsWith('about:')) {
+        target = 'https://duckduckgo.com/html/?q=' + encodeURIComponent(input);
+        title = input;
+      }
+
+      current.url = target;
+      current.title = title;
+      if (!target.startsWith('about:')) {
+        demoState.history.unshift({ title, url: target });
+      }
+      document.getElementById('demo-status').textContent = `Готово • ${target}`;
+      demoAnimateProgress();
+      renderDemo();
+    }
+
+    function demoReload() {
+      demoAnimateProgress();
+      const current = demoState.tabs.find(t => t.id === demoState.activeId);
+      if (current) {
+        document.getElementById('demo-status').textContent = `Обновлено • ${current.url}`;
+      }
+    }
+
+    function demoToggleSidebar() {
+      demoState.sidebarOpen = !demoState.sidebarOpen;
+      renderDemo();
+    }
+
+    function demoToggleBookmark() {
+      const current = demoState.tabs.find(t => t.id === demoState.activeId);
+      if (!current) return;
+      const idx = demoState.bookmarks.findIndex(b => b.url === current.url);
+      if (idx >= 0) {
+        demoState.bookmarks.splice(idx, 1);
+      } else {
+        demoState.bookmarks.unshift({ title: current.title, url: current.url });
+      }
+      renderDemo();
+    }
+
+    // Initialize interactive demo on load
+    renderDemo();
+  </script>
+</body>
+</html>
